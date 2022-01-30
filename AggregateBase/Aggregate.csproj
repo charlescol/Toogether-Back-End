@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AppEvent\AppEvent.csproj" />
+    <ProjectReference Include="..\AppModel\AppModel.csproj" />
+    <ProjectReference Include="..\ServiceModel\ServiceModel.csproj" />
+  </ItemGroup>
+
+</Project>
