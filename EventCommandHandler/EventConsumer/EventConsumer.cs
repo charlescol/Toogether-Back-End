@@ -18,7 +18,7 @@ namespace EventCommandHandler.EventConsumer
         }
 
          [FunctionName("EventConsumer")]
-         public void User([RabbitMQTrigger("EventInternQueue", ConnectionStringSetting = "RabbitMQConnection")] string item, ILogger log)
+         public void User([ServiceBusTrigger("eventinternqueue", Connection = "AzureServiceBusConnection")] string item, ILogger log)
          {
              try
              {

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using System;
+using System.Security.Authentication;
 
 [assembly: FunctionsStartup(typeof(EventCommand.Startup))]
 namespace EventCommand
@@ -10,7 +11,9 @@ namespace EventCommand
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            var client = new MongoClient(Environment.GetEnvironmentVariable("MongoDBConnectionString"));
+            MongoClientSettings settings = MongoClientSettings.FromUrl(new MongoUrl(Environment.GetEnvironmentVariable("MongoDBConnectionString")));
+            settings.SslSettings =new SslSettings() { EnabledSslProtocols = SslProtocols.Tls12 };
+            var client = new MongoClient(settings);
             builder.Services.AddSingleton((s) =>
             {
                 return client.GetDatabase("QueryDB");

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 namespace Aggregate.User
 {
     using UserItem = AppModel.Storage.ReferencedItem<Guid, AppModel.User.PrivateUser>;
+    using PublicUserItem = AppModel.Storage.ReferencedItem<Guid, AppModel.User.PublicUser>;
     using RestrictedUserItem = AppModel.Storage.ReferencedItem<Guid, AppModel.User.RestrictedPublicUser>;
     using RestrictedEventItem = AppModel.Storage.ReferencedItem<Guid, AppModel.Event.RestrictedEvent>;
     public class UserAggregate : AggregateBase<Guid, Guid>
@@ -19,9 +20,21 @@ namespace Aggregate.User
         {
             CheckRestrictedUserItem(user.Item);
         }
-        public UserAggregate(List<UserItem> users) 
+        public UserAggregate(PublicUserItem user)
+        {
+            CheckPublicUserItem(user.Item);
+        }
+        public UserAggregate(List<UserItem> users)
         {
             users.ForEach(item => CheckUserItem(item));
+        }
+        public UserAggregate(List<RestrictedUserItem> users)
+        {
+            users.ForEach(user => CheckRestrictedUserItem(user.Item));
+        }
+        public UserAggregate(List<PublicUserItem> users)
+        {
+            users.ForEach(user => CheckPublicUserItem(user.Item));
         }
         public void CheckUserItem(UserItem user)
         {

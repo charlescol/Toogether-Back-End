@@ -15,6 +15,7 @@ namespace UserCommand.Service
         }
         public void AddEvent(UserAggregate aggregate)
         {
+            Console.WriteLine(aggregate.GetUncommittedEvents());
             foreach (DomainEvent<Guid, Guid> @event in aggregate.GetUncommittedEvents())
             {
                 AddEvent(@event);

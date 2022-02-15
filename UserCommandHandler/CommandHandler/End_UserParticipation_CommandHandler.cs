@@ -3,6 +3,7 @@ using AggregateBase.Service;
 using System;
 using AppEvent.Event;
 using Aggregate.User;
+using System.Threading.Tasks;
 
 namespace UserCommand.CommandHandler
 {
@@ -22,8 +23,9 @@ namespace UserCommand.CommandHandler
             _service.AddEvent(aggregate);
             if (Publish)
             {
-                EventPublisher.EventPublisher.SendMessage(end_UserEvent_Participation_Event);
-                EventPublisher.EventPublisher.SendMessage(end_EventUser_Participation_Event, EventPublisher.EventPublisher.Exchange.FanoutExchange);
+                Task.Run(() => EventPublisher.EventPublisher.SendAsync(end_UserEvent_Participation_Event))
+                    .ContinueWith((p) => EventPublisher.EventPublisher.SendAsync(end_EventUser_Participation_Event, EventPublisher.EventPublisher.Queue.EventInternQueue), 
+                    TaskContinuationOptions.ExecuteSynchronously);
             }
         }
     }

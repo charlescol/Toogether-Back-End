@@ -46,9 +46,9 @@ namespace AppModel.Command.User
     }
     public class End_Follow_Command : ICommand
     {
-        public UserItem UserFollowed { get; private set; }
-        public UserItem UserFollower { get; private set; }
-        public End_Follow_Command(UserItem userFollowed, UserItem userFollower)
+        public RestrictedUserItem UserFollowed { get; private set; }
+        public RestrictedUserItem UserFollower { get; private set; }
+        public End_Follow_Command(RestrictedUserItem userFollowed, RestrictedUserItem userFollower)
         {
             UserFollowed = userFollowed;
             UserFollower = userFollower;
@@ -56,9 +56,9 @@ namespace AppModel.Command.User
     }
     public class Follow_Command : ICommand
     {
-        public UserItem UserFollowed { get; private set; }
-        public UserItem UserFollower { get; private set; }
-        public Follow_Command(UserItem userFollowed, UserItem userFollower)
+        public RestrictedUserItem UserFollowed { get; private set; }
+        public RestrictedUserItem UserFollower { get; private set; }
+        public Follow_Command(RestrictedUserItem userFollowed, RestrictedUserItem userFollower)
         {
             UserFollowed = userFollowed;
             UserFollower = userFollower;

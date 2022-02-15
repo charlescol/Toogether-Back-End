@@ -28,7 +28,6 @@ namespace UserCommand
             {
                 try
                 {
-                    EventPublisher.EventPublisher.Init();
                     var content = await new StreamReader(req.Body).ReadToEndAsync();
 
                     var command = JsonConvert.DeserializeObject<AppModel.Command.User.Create_Command>(content);

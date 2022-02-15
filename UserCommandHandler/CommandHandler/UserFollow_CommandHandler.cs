@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using AppEvent.Event;
 using Aggregate.User;
+using System.Threading.Tasks;
 
 namespace UserCommand.CommandHandler
 {
@@ -18,16 +19,16 @@ namespace UserCommand.CommandHandler
         }
         public override void Handle(AppModel.Command.User.Follow_Command command)
         {
-            var aggregate = new UserAggregate(new List<UserItem> { command.UserFollower, command.UserFollowed });
-            var @event_follower = new FollowerFollowed_Follow_Event(command.UserFollower._id, new RestrictedUserItem(command.UserFollowed._id, command.UserFollowed.Item.Public.MainInfo));
-            var @event_followed = new FollowedFollower_Followed_Event(command.UserFollowed._id, new RestrictedUserItem(command.UserFollower._id, command.UserFollower.Item.Public.MainInfo));
+            var aggregate = new UserAggregate(new List<RestrictedUserItem> { command.UserFollower, command.UserFollowed });
+            var @event_follower = new FollowerFollowed_Follow_Event(command.UserFollower._id, command.UserFollowed);
+            var @event_followed = new FollowedFollower_Followed_Event(command.UserFollowed._id, command.UserFollower);
             aggregate.RaiseEvent(@event_follower);
             aggregate.RaiseEvent(@event_followed);
             _service.AddEvent(aggregate);
             if (Publish)
             {
-                EventPublisher.EventPublisher.SendMessage(@event_follower);
-                EventPublisher.EventPublisher.SendMessage(@event_followed);
+                Task.Run(() => EventPublisher.EventPublisher.SendAsync(@event_follower))
+                    .ContinueWith((p) => EventPublisher.EventPublisher.SendAsync(@event_followed), TaskContinuationOptions.ExecuteSynchronously);
             }
         }
     }

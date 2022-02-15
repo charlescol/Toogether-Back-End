@@ -7,7 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="..\AppEvent\AppEvent.csproj" />
     <ProjectReference Include="..\AppModel\AppModel.csproj" />
-    <ProjectReference Include="..\ServiceModel\ServiceModel.csproj" />
   </ItemGroup>
 
 </Project>

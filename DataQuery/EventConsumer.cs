@@ -22,7 +22,7 @@ namespace DataQuery
         }
 
         [FunctionName("UserEventConsumer")]
-        public void User([RabbitMQTrigger("UserQueryQueue", ConnectionStringSetting = "RabbitMQConnection")] string item, ILogger log)
+        public void User([ServiceBusTrigger("userqueryqueue", Connection = "AzureServiceBusConnection")] string item, ILogger log)
         {
             try
             {
@@ -93,7 +93,7 @@ namespace DataQuery
             }
         }
         [FunctionName("EventEventConsumer")]
-        public void Event([RabbitMQTrigger("EventQueryQueue", ConnectionStringSetting = "RabbitMQConnection")] string item, ILogger log)
+        public void Event([ServiceBusTrigger("eventqueryqueue", Connection = "AzureServiceBusConnection")] string item, ILogger log)
         {
             var @event = JsonConvert.DeserializeObject<DomainEvent<Guid, Guid>>(item);
             if (@event != null)

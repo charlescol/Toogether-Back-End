@@ -1,84 +1,44 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
-using AggregateBase;
+using System.Threading.Tasks;
 using AppEvent.Base;
-using AppEvent.Event;
+using Azure.Messaging.ServiceBus;
 using Newtonsoft.Json;
-using RabbitMQ.Client;
 
 namespace EventCommand.EventPublisher
 {
     public class EventPublisher
     {
-        public struct Exchange
-        {
-            public const string TopicExchange = "TopicExchange";
-            public const string FanoutExchange = "FanoutExchange";
-        }
+        static ServiceBusClient client;
+        static ServiceBusSender sender;
         public struct Queue
         {
             public const string EventQueryQueue = "EventQueryQueue";
-            public const string UserQueryQueue = "UserQueryQueue";
             public const string EventInternQueue = "EventInternQueue";
         }
-        public static void Init()
+        public static async Task SendAsync(DomainEvent<Guid, Guid> @event, string queue = Queue.EventQueryQueue)
         {
-            var factory = new ConnectionFactory()
+            client = new ServiceBusClient(Environment.GetEnvironmentVariable("AzureServiceBusConnection"));
+            // Create the clients that we'll use for sending and processing messages.
+            sender = client.CreateSender(queue);
+            // create a batch 
+            using ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
+            // try adding a message to the batch
+            if (!messageBatch.TryAddMessage(new ServiceBusMessage(JsonConvert.SerializeObject(@event))))
             {
-                Uri = new Uri(Environment.GetEnvironmentVariable("RabbitMQConnection"))
-            };
-            using (var connection = factory.CreateConnection())
-            {
-                using (var channel = connection.CreateModel())
-                {
-                    Dictionary<string, object> argument = new Dictionary<string, object>()
-                    {
-                        {"x-queue-type", "quorum"}
-                    };
-                    channel.ExchangeDeclare(Exchange.TopicExchange, ExchangeType.Topic, true);
-                    channel.ExchangeDeclare(Exchange.FanoutExchange, ExchangeType.Fanout, true);
-                    channel.QueueDeclare(Queue.EventQueryQueue, true, false, false, argument);
-                    channel.QueueDeclare(Queue.EventInternQueue, true, false, false, argument);
-                    channel.QueueDeclare(Queue.UserQueryQueue, true, false, false, argument);
-
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(User_Created_Event));
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(User_Replaced_Event));
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(UserEvent_Participation_Event));
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(End_UserEvent_Participation_Event));
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(End_FollowedFollower_Followed_Event));
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(End_FollowerFollowed_Follow_Event));
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(FollowerFollowed_Follow_Event));
-                    channel.QueueBind(Queue.UserQueryQueue, Exchange.TopicExchange, nameof(FollowedFollower_Followed_Event));
-
-                    channel.QueueBind(Queue.EventQueryQueue, Exchange.TopicExchange, nameof(Event_Created_Event));
-                    channel.QueueBind(Queue.EventQueryQueue, Exchange.TopicExchange, nameof(Event_Replaced_Event));
-                    channel.QueueBind(Queue.EventQueryQueue, Exchange.TopicExchange, nameof(User_Replaced_Event));
-                    channel.QueueBind(Queue.EventQueryQueue, Exchange.FanoutExchange, nameof(End_EventUser_Participation_Event));
-                    channel.QueueBind(Queue.EventQueryQueue, Exchange.FanoutExchange, nameof(EventUser_Participation_Event));
-
-                    channel.QueueBind(Queue.EventInternQueue, Exchange.FanoutExchange, nameof(End_EventUser_Participation_Event));
-                    channel.QueueBind(Queue.EventInternQueue, Exchange.FanoutExchange, nameof(EventUser_Participation_Event));
-                }
+                // if it is too large for the batch
+                throw new Exception($"The message is too large to fit in the batch.");
             }
-        }
-        public static void SendMessage(DomainEvent<Guid, Guid> @event, string exchange = Exchange.TopicExchange)
-        {
-            var factory = new ConnectionFactory()
+            try
             {
-                Uri = new Uri(Environment.GetEnvironmentVariable("RabbitMQConnection"))
-            };
-            using (var connection = factory.CreateConnection())
+                // Use the producer client to send the batch of messages to the Service Bus queue
+                await sender.SendMessagesAsync(messageBatch);
+            }
+            finally
             {
-                using (var channel = connection.CreateModel())
-                {
-                    var props = channel.CreateBasicProperties();
-                    props.Persistent = false;
-
-                    var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(@event));
-                    channel.BasicPublish(exchange, @event.Name, props, body);
-                }
+                // Calling DisposeAsync on client types is required to ensure that network
+                // resources and other unmanaged objects are properly cleaned up.
+                await sender.DisposeAsync();
+                await client.DisposeAsync();
             }
         }
     }

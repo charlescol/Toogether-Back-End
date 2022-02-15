@@ -3,6 +3,7 @@ using AggregateBase.Service;
 using System;
 using AppEvent.Event;
 using Aggregate.User;
+using System.Threading.Tasks;
 
 namespace UserCommand.CommandHandler
 {
@@ -16,15 +17,16 @@ namespace UserCommand.CommandHandler
         public override void Handle(AppModel.Command.User.Participation_Command command)
         {
             var aggregate = new UserAggregate(command.User);
-            var userEvent_Participation_Event = new UserEvent_Participation_Event(command.User._id, command.Event);
-            var eventUser_participationEvent = new EventUser_Participation_Event(command.Event._id, command.User);
+            var userEvent_ParticipationEvent = new UserEvent_Participation_Event(command.User._id, command.Event);
+            var eventUser_ParticipationEvent = new EventUser_Participation_Event(command.Event._id, command.User);
 
-            aggregate.RaiseEvent(userEvent_Participation_Event);
+            aggregate.RaiseEvent(userEvent_ParticipationEvent);
             _service.AddEvent(aggregate);
             if (Publish)
             {
-                EventPublisher.EventPublisher.SendMessage(userEvent_Participation_Event);
-                EventPublisher.EventPublisher.SendMessage(eventUser_participationEvent, EventPublisher.EventPublisher.Exchange.FanoutExchange);
+                Task.Run(() => EventPublisher.EventPublisher.SendAsync(userEvent_ParticipationEvent))
+                    .ContinueWith((p) => EventPublisher.EventPublisher.SendAsync(eventUser_ParticipationEvent, EventPublisher.EventPublisher.Queue.EventInternQueue),
+                    TaskContinuationOptions.ExecuteSynchronously);
             }
         }
     }

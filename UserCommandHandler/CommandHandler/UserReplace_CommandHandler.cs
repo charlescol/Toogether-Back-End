@@ -3,6 +3,7 @@ using AggregateBase.Service;
 using System;
 using AppEvent.Event;
 using Aggregate.User;
+using System.Threading.Tasks;
 
 namespace UserCommand.CommandHandler
 {
@@ -19,7 +20,7 @@ namespace UserCommand.CommandHandler
             var @event = new User_Replaced_Event(command.User);
             aggregate.RaiseEvent(@event);
             _service.AddEvent(aggregate);
-            if(Publish) EventPublisher.EventPublisher.SendMessage(@event);
+            if (Publish) Task.Run(() => EventPublisher.EventPublisher.SendAsync(@event));
         }
     }
 }
